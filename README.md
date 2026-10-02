@@ -21,7 +21,7 @@ Designed specifically for technical evaluations and high-stakes interviews, show
 - **📈 Dashboard KPI Metrics**: Live count cards displaying Total Users, Active Accounts, Inactive Accounts, and Administrator totals.
 - **🔒 Password Security**: Industry-standard **BCrypt** salted hashing (work factor 10). Plaintext passwords are never stored in the database or serialized into JSON responses.
 - **📋 Audit Activity Logs**: Tracks authentication and CRUD events (`LOGIN`, `LOGOUT`, `USER_CREATED`, `USER_UPDATED`, `USER_DELETED`, `STATUS_CHANGED`) with timestamps and client IP addresses.
-- **🔄 Smart Database Resilience**: Seamlessly connects to your primary MySQL database; includes an auto-initializing embedded MySQL-compatible engine for zero-configuration testing.
+- **🔄 Dedicated MySQL Persistence**: Connects directly to local or remote MySQL Server via HikariCP high-performance connection pooling, with auto-schema generation and seed verification.
 
 ---
 
@@ -81,18 +81,18 @@ Once started, open your web browser at:
 
 ## 🗄️ Database Setup (MySQL)
 
-By default, the application is pre-configured to look for MySQL running locally on port `3306`:
+By default, the application is configured to connect to your local MySQL instance on port `3306`:
 - **Database Name**: `usermanagement_db`
 - **User**: `root`
-- **Password**: `root` (Configurable in `src/main/resources/db.properties`)
+- **Password**: `root123` (Configured in `src/main/resources/db.properties`)
 
-### To initialize MySQL manually:
-1. Open MySQL Workbench or your MySQL CLI:
-   ```bash
-   mysql -u root -p < init-db.sql
-   ```
-2. Check `src/main/resources/db.properties` and verify your username/password.
-3. If your MySQL server is currently offline or unreachable, the application **automatically falls back** to an embedded MySQL-compatible engine so the application will run and remain fully functional without crashing.
+### Database Initialization:
+The application's `DBInitializer` automatically creates the required tables (`users`, `activity_logs`) and seeds initial accounts upon startup.
+
+Alternatively, you can initialize or inspect the database using MySQL CLI or MySQL Workbench:
+```powershell
+Get-Content init-db.sql | mysql -u root -proot123
+```
 
 ---
 
@@ -140,7 +140,7 @@ c:\Dhanush\
 │       │   │   ├── AuthenticationFilter.java # Protected route & API security filter
 │       │   │   └── NoCacheFilter.java    # HTTP Cache-Control header enforcer
 │       │   ├── util\
-│       │   │   ├── DBConnectionManager.java # HikariCP pool manager with fallback
+│       │   │   ├── DBConnectionManager.java # HikariCP MySQL connection pool manager
 │       │   │   ├── DBInitializer.java    # Automatic schema script runner
 │       │   │   └── PasswordUtil.java     # BCrypt password hashing & salt generation
 │       │   └── web\

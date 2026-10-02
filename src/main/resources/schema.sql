@@ -1,11 +1,14 @@
 -- ============================================================
--- Database Schema for User Management System
--- Compatible with MySQL 8.x / 5.7+ and H2 (MySQL Mode)
+-- Database Schema for User Management System (MySQL)
+-- Compatible with MySQL 8.x / 5.7+ / Innovation Releases
 -- ============================================================
 
--- Create Database if not exists (for standalone MySQL setups)
--- CREATE DATABASE IF NOT EXISTS usermanagement_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
--- USE usermanagement_db;
+-- Create Database if not exists
+CREATE DATABASE IF NOT EXISTS usermanagement_db
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
+USE usermanagement_db;
 
 -- ------------------------------------------------------------
 -- Table: users
@@ -21,13 +24,11 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(20) NOT NULL DEFAULT 'USER',
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexing for fast lookups and high-performance queries
-CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
-CREATE INDEX IF NOT EXISTS idx_users_role_status ON users (role, status);
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_users_username (username),
+    INDEX idx_users_email (email),
+    INDEX idx_users_role_status (role, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
 -- Table: activity_logs
@@ -40,11 +41,11 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     action VARCHAR(50) NOT NULL,
     details VARCHAR(255),
     ip_address VARCHAR(45),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_logs_action ON activity_logs (action);
-CREATE INDEX IF NOT EXISTS idx_logs_created_at ON activity_logs (created_at);
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_logs_action (action),
+    INDEX idx_logs_created_at (created_at),
+    CONSTRAINT fk_activity_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
 -- Seed Initial Sample Data (Admin and Standard Users)

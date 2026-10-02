@@ -48,7 +48,7 @@ public class DBInitializer {
                         "role VARCHAR(20) NOT NULL DEFAULT 'USER', " +
                         "status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', " +
                         "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                        "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+                        "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)");
 
                 stmt.execute("CREATE TABLE IF NOT EXISTS activity_logs (" +
                         "id INT AUTO_INCREMENT PRIMARY KEY, " +
