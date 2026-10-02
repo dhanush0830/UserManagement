@@ -7,7 +7,8 @@
     <groupId>com.usermanagement</groupId>
     <artifactId>user-management-system</artifactId>
     <version>1.0.0</version>
-    <packaging>war</packaging>
+    <!-- Changed from 'war' to 'jar' so Maven Shade can produce an executable uber-JAR -->
+    <packaging>jar</packaging>
 
     <name>User Management System</name>
     <description>Enterprise Java Web Application with Session Security, Jersey JAX-RS, JSP, jQuery, AJAX, and MySQL</description>
@@ -22,18 +23,18 @@
     </properties>
 
     <dependencies>
-        <!-- Servlet and JSP APIs (provided for WAR, compile for embedded) -->
+        <!-- Servlet and JSP APIs — compile scope so they are bundled inside the uber JAR -->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>4.0.1</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet.jsp</groupId>
             <artifactId>javax.servlet.jsp-api</artifactId>
             <version>2.3.3</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -86,7 +87,7 @@
             <version>0.4</version>
         </dependency>
 
-        <!-- Embedded Tomcat for 1-click standalone execution -->
+        <!-- Embedded Tomcat for standalone execution (no external server needed) -->
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
@@ -128,15 +129,56 @@
                     <target>22</target>
                 </configuration>
             </plugin>
+
+            <!--
+                Maven Shade Plugin: produces a single executable uber-JAR (user-management.jar)
+                that bundles all dependencies. This is how the Docker image runs without
+                needing an external Tomcat installation.
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <version>3.4.0</version>
-                <configuration>
-                    <failOnMissingWebXml>false</failOnMissingWebXml>
-                </configuration>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <!-- Set the main class in the JAR manifest -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.usermanagement.Main</mainClass>
+                                </transformer>
+                                <!-- Merge SPI/service files (required for Jersey SPI auto-discovery) -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <!-- Append duplicate META-INF text files instead of overwriting -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/NOTICE</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/LICENSE</resource>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <!-- Strip JAR signature files that break fat-jar execution -->
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
-            <!-- Exec Maven Plugin for running Main embedded server -->
+
+            <!-- Exec Maven Plugin for local dev: mvn exec:java -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>

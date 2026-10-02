@@ -48,10 +48,48 @@ public class DBConnectionManager {
             logger.error("Failed to load db.properties", e);
         }
 
+        // --- Railway / PaaS environment variable overrides ---
+        // Railway MySQL plugin provides: MYSQL_URL (full JDBC URL) OR individual vars
+        // Priority: env vars > db.properties > hardcoded defaults
         String driver = props.getProperty("db.driver", "com.mysql.cj.jdbc.Driver");
-        String url = props.getProperty("db.url", "jdbc:mysql://localhost:3306/usermanagement_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true");
-        String user = props.getProperty("db.username", "root");
-        String pass = props.getProperty("db.password", "root123");
+        String url    = props.getProperty("db.url",
+                "jdbc:mysql://localhost:3306/usermanagement_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true");
+        String user   = props.getProperty("db.username", "root");
+        String pass   = props.getProperty("db.password", "root123");
+
+        // 1. Full JDBC URL (Railway sets MYSQL_URL or DATABASE_URL in jdbc:mysql://... format)
+        String envUrl = System.getenv("MYSQL_URL");
+        if (envUrl == null || envUrl.isBlank()) envUrl = System.getenv("DATABASE_URL");
+        if (envUrl != null && !envUrl.isBlank()) {
+            url = envUrl;
+            logger.info("Using JDBC URL from environment variable.");
+        } else {
+            // 2. Individual Railway MySQL vars: MYSQLHOST, MYSQLPORT, MYSQLDATABASE, MYSQLUSER, MYSQLPASSWORD
+            String host = System.getenv("MYSQLHOST");
+            if (host == null || host.isBlank()) host = System.getenv("MYSQL_HOST");
+            String portStr = System.getenv("MYSQLPORT");
+            if (portStr == null || portStr.isBlank()) portStr = System.getenv("MYSQL_PORT");
+            String dbName = System.getenv("MYSQLDATABASE");
+            if (dbName == null || dbName.isBlank()) dbName = System.getenv("MYSQL_DATABASE");
+            if (host != null && !host.isBlank()) {
+                String port = (portStr != null && !portStr.isBlank()) ? portStr : "3306";
+                String db   = (dbName  != null && !dbName.isBlank())  ? dbName  : "usermanagement_db";
+                url = "jdbc:mysql://" + host + ":" + port + "/" + db
+                        + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true";
+                logger.info("Built JDBC URL from MYSQLHOST/MYSQLPORT/MYSQLDATABASE env vars: jdbc:mysql://{}:{}/{}", host, port, db);
+            }
+        }
+
+        // 3. Credentials
+        String envUser = System.getenv("MYSQLUSER");
+        if (envUser == null || envUser.isBlank()) envUser = System.getenv("MYSQL_USER");
+        if (envUser != null && !envUser.isBlank()) user = envUser;
+
+        String envPass = System.getenv("MYSQLPASSWORD");
+        if (envPass == null || envPass.isBlank()) envPass = System.getenv("MYSQL_PASSWORD");
+        if (envPass == null || envPass.isBlank()) envPass = System.getenv("MYSQL_ROOT_PASSWORD");
+        if (envPass != null && !envPass.isBlank()) pass = envPass;
+        // --- End Railway overrides ---
 
         try {
             logger.info("Initializing MySQL HikariCP Connection Pool at: {}", url);

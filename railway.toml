@@ -1,0 +1,21 @@
+# railway.toml — Railway deployment configuration
+# Docs: https://docs.railway.app/reference/config-as-code
+
+[build]
+# Tell Railway to use our Dockerfile instead of Nixpacks auto-detection
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Railway injects PORT automatically; the app reads it via System.getenv("PORT")
+# Start command is handled by the Dockerfile ENTRYPOINT, but can be overridden here
+startCommand = "java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.net.preferIPv4Stack=true -jar app.jar"
+
+# Health-check: Railway will poll this path; 200 OK means the app is healthy.
+# The root path redirects to login.jsp which returns 200.
+healthcheckPath = "/"
+healthcheckTimeout = 60
+
+# Restart policy on non-zero exit codes
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

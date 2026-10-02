@@ -3,6 +3,7 @@ package com.usermanagement.web;
 import com.usermanagement.model.ApiResponse;
 import com.usermanagement.model.User;
 import com.usermanagement.service.AuthService;
+import com.usermanagement.service.UserService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -23,26 +24,32 @@ import javax.ws.rs.core.Response;
 public class AuthResource {
 
     private final AuthService authService = new AuthService();
+    private final UserService userService = new UserService();
 
     public static class LoginRequest {
         private String username;
         private String password;
 
-        public String getUsername() {
-            return username;
-        }
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
+    }
 
-        public void setUsername(String username) {
-            this.username = username;
-        }
+    public static class RegisterRequest {
+        private String username;
+        private String password;
+        private String fullName;
+        private String email;
 
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
+        public String getFullName() { return fullName; }
+        public void setFullName(String fullName) { this.fullName = fullName; }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
     }
 
     /**
@@ -80,6 +87,39 @@ public class AuthResource {
     public Response logout(@Context HttpServletRequest httpRequest) {
         authService.logout(httpRequest);
         return Response.ok(ApiResponse.success("Logged out successfully.")).build();
+    }
+
+    /**
+     * Self-registration: creates a new USER-role account.
+     */
+    @POST
+    @Path("/register")
+    public Response register(RegisterRequest request, @Context HttpServletRequest httpRequest) {
+        if (request == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("Request body is required."))
+                    .build();
+        }
+        User newUser = new User();
+        newUser.setUsername(request.getUsername());
+        newUser.setPassword(request.getPassword());
+        newUser.setFullName(request.getFullName());
+        newUser.setEmail(request.getEmail());
+        newUser.setRole("USER");
+        newUser.setStatus("ACTIVE");
+
+        java.util.List<String> errors = new java.util.ArrayList<>();
+        String clientIp = AuthService.getClientIp(httpRequest);
+        boolean created = userService.createUser(newUser, "SELF_REGISTER", clientIp, errors);
+        if (created) {
+            return Response.status(Response.Status.CREATED)
+                    .entity(ApiResponse.success("Account created successfully! You can now sign in."))
+                    .build();
+        } else {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error(errors.isEmpty() ? "Registration failed." : String.join(" ", errors)))
+                    .build();
+        }
     }
 
     /**

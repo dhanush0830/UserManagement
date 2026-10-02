@@ -1,0 +1,29 @@
+# Git artifacts
+.git
+.gitignore
+
+# IDE & editor files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Maven build output — rebuilt inside Docker
+target/
+
+# Windows scripts (not needed in container)
+*.bat
+*.cmd
+
+# Local environment files — Railway injects its own env vars
+*.env
+.env*
+
+# Documentation (saves image build time)
+README.md
+IMPLEMENTATION.md

@@ -33,11 +33,18 @@ public class Main {
             }
         }
 
+        // Resolve webapp directory - supports dev (src/main/webapp), Docker (webapp/), and jar-relative paths
         String webappDirLocation = "src/main/webapp/";
         File webappDir = new File(webappDirLocation);
         if (!webappDir.exists()) {
             webappDirLocation = "webapp/";
             webappDir = new File(webappDirLocation);
+        }
+        if (!webappDir.exists()) {
+            // Fallback: look relative to the jar location
+            String jarDir = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParent();
+            webappDir = new File(jarDir, "webapp");
+            webappDirLocation = webappDir.getAbsolutePath();
         }
 
         System.setProperty("java.net.preferIPv4Stack", "true");
@@ -45,10 +52,11 @@ public class Main {
         Tomcat tomcat = new Tomcat();
         tomcat.setPort(port);
         tomcat.setBaseDir(new File("target/tomcat").getAbsolutePath());
-        
+
+        // Bind to 0.0.0.0 so Railway (and other PaaS) can route external traffic
         org.apache.catalina.connector.Connector connector = tomcat.getConnector();
         connector.setPort(port);
-        connector.setProperty("address", "127.0.0.1");
+        connector.setProperty("address", "0.0.0.0");
         tomcat.getHost().setAutoDeploy(false);
 
         // Register web application context

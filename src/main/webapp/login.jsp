@@ -104,6 +104,12 @@
                         <div>Your session has expired. Please sign in again.</div>
                     </div>
                 <% } %>
+                <% if ("true".equals(request.getParameter("registered"))) { %>
+                    <div class="alert alert-success d-flex align-items-center gap-2 small py-2 mb-3 bg-opacity-10 border border-success" role="alert">
+                        <i class="bi bi-check-circle-fill flex-shrink-0 text-success"></i>
+                        <div>Account created successfully! You can now sign in.</div>
+                    </div>
+                <% } %>
 
                 <!-- Dynamic Error Alert -->
                 <div id="loginAlert" class="alert alert-danger d-none align-items-center gap-2 small py-2 mb-3 bg-opacity-10 border border-danger" role="alert">
@@ -166,6 +172,15 @@
                             <i class="bi bi-person-fill text-secondary"></i>User: <strong>jane_smith</strong>
                         </span>
                     </div>
+                </div>
+
+                <!-- Register Link -->
+                <div class="pt-3 border-top text-center" style="border-color: var(--border-subtle) !important;">
+                    <span class="text-secondary small">New here?</span>
+                    <a href="${pageContext.request.contextPath}/register.jsp"
+                       class="small fw-semibold ms-1" style="color:#6366f1; text-decoration:none;">
+                        Create an Account <i class="bi bi-person-plus"></i>
+                    </a>
                 </div>
             </div>
         </div>

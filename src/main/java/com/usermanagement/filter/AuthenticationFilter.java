@@ -31,7 +31,9 @@ public class AuthenticationFilter implements Filter {
     // Whitelisted URL prefixes accessible without an active session
     private static final List<String> PUBLIC_PATH_PREFIXES = Arrays.asList(
             "/login.jsp",
+            "/register.jsp",
             "/api/auth/login",
+            "/api/auth/register",
             "/css/",
             "/js/",
             "/images/",
@@ -54,16 +56,21 @@ public class AuthenticationFilter implements Filter {
         String requestUri = httpRequest.getRequestURI();
         String relativePath = requestUri.substring(contextPath.length());
 
-        // Redirect root context "/" to home.jsp (which will be intercepted if not logged in)
+        // Redirect root context "/" to login.jsp
         if (relativePath.equals("") || relativePath.equals("/")) {
-            httpResponse.sendRedirect(contextPath + "/home.jsp");
+            HttpSession rootSession = httpRequest.getSession(false);
+            if (rootSession != null && rootSession.getAttribute(AuthService.SESSION_USER_KEY) != null) {
+                httpResponse.sendRedirect(contextPath + "/home.jsp");
+            } else {
+                httpResponse.sendRedirect(contextPath + "/login.jsp");
+            }
             return;
         }
 
         // Allow public resources through without checking session
         if (isPublicPath(relativePath)) {
             // If already logged in and visiting login.jsp, redirect straight to home.jsp
-            if (relativePath.equals("/login.jsp")) {
+            if (relativePath.equals("/login.jsp") || relativePath.equals("/register.jsp")) {
                 HttpSession session = httpRequest.getSession(false);
                 if (session != null && session.getAttribute(AuthService.SESSION_USER_KEY) != null) {
                     httpResponse.sendRedirect(contextPath + "/home.jsp");
