@@ -61,6 +61,12 @@ public class DBConnectionManager {
         String envUrl = System.getenv("MYSQL_URL");
         if (envUrl == null || envUrl.isBlank()) envUrl = System.getenv("DATABASE_URL");
         if (envUrl != null && !envUrl.isBlank()) {
+            // Railway sets MYSQL_URL / DATABASE_URL as "mysql://..." (no jdbc: prefix).
+            // HikariCP requires "jdbc:mysql://...", so we normalise it here.
+            if (envUrl.startsWith("mysql://") || envUrl.startsWith("mysql+tcp://")) {
+                envUrl = "jdbc:" + envUrl;
+                logger.info("Prepended 'jdbc:' prefix to env URL (Railway format detected).");
+            }
             url = envUrl;
             logger.info("Using JDBC URL from environment variable.");
         } else {
